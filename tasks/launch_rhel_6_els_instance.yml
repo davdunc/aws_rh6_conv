@@ -1,0 +1,52 @@
+---
+# Launch a RHEL6 ELS instance and collect the base volume
+
+- name: Launch the temporary target instance in the temporary VPN
+  community.aws.ec2_instance:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ inject.region | default(omit) }}"
+    tags: "{{ inject.tags | combine({'els_state':'incomplete', 'assignment': donor_instance_id }) }}"
+    instance_type: "{{ donor_instance_instance_type | default('t2.large') }}"
+    vpc_subnet_id: "{{ rhel_6_els_vpc_subnet.subnet.id }}"
+    image_id: "{{ rhel_6_els_ami.image_id }}"
+    key_name: rhel-6-els-temp-key
+    security_group: rhel_6_els_group
+    name: "target-{{ donor_instance_id }}"
+    network:
+      assign_public_ip: "{{ inject.target.assign_public_ip | default(true) }}"
+    filters:
+      tag:Name: "target-{{ donor_instance_id }}"
+      instance-state-name: running
+  register: target_instances
+  delegate_to: 127.0.0.1
+  delegate_facts: true
+  async: 7200
+  poll: 0
+
+- name: Wait for the target instance to complete
+  ansible.builtin.async_status:
+    jid: "{{ target_instances.ansible_job_id }}"
+  register: ec2_job
+  until: ec2_job.finished
+  retries: 300
+  delay: 20
+  delegate_to: 127.0.0.1
+  delegate_facts: true
+
+- name: Identify the content of target_instances.instances
+  debug:
+    var: ec2_job.instances
+
+
+- name: add to hostgroup for targets
+  add_host:
+    hostname: "{{ item.1.public_dns_name }}"
+    groups:
+      - targets
+      - incomplete
+      - "{{ item.1.instance_id | replace('-', '_') }}"
+    vars:
+      ansible_ssh_private_key_file: "/tmp/rhel_6_els_temp_key.pem"
+  with_indexed_items: "{{ ec2_job.instances }}"

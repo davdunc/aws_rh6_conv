@@ -1,0 +1,20 @@
+---
+# RHEL_6_ELS_CONV vars
+
+# aws_access_key undefined
+# aws_secret_key undefined
+rhel6_instance_tag_name: migration_task_els
+rhel6_instance_tag_value: donor
+rhel6_els_instance_tag_name: migration_task_els
+rhel6_els_instance_tag_value: target
+
+inject:
+  region: "{{ region | default(omit) }}"
+  profile: "{{ profile | default(omit) }}"
+  private_key_path: "{{ temp_key_path | default('/tmp/rhel_6_els_temp_key.pem') }}"
+  tags:
+    task: rhel_6_els_conversion
+    state: incomplete
+  rhel6els:
+    product-code-type: marketplace
+    product-code: cacc3780-8160-445b-b4c6-0268ea0a74d1

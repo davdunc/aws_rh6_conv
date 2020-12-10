@@ -1,0 +1,106 @@
+---
+# Build a disposable vpc for the deployment.
+# This will create one VPC and one subnet in
+#  the same AZ as the instance to be converted.
+#
+   # ######################################################################## #
+   # Copyright 2020 Amazon Web Services, Inc.                                 #
+   #                                                                          #
+   # Licensed under the Apache License, Version 2.0 (the "License");          #
+   # you may not use this file except in compliance with the License.         #
+   # You may obtain a copy of the License at                                  #
+   #                                                                          #
+   #     http://www.apache.org/licenses/LICENSE-2.0                           #
+   #                                                                          #
+   # Unless required by applicable law or agreed to in writing, software      #
+   # distributed under the License is distributed on an "AS IS" BASIS,        #
+   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+   # See the License for the specific language governing permissions and      #
+   # limitations under the License.                                           #
+   # ######################################################################## #
+#
+# Depends on
+#   - get_instance_information.yml
+#  Var: inject.tags
+#    - default project tags
+#  Var: rhel_6_els_cidr_ip | default('0.0.0.0/0')
+#    - security group with access from the ansible host
+
+- name: VPC | build an isolated environment for the instance
+  amazon.aws.ec2_vpc_net:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ inject.region | default(omit) }}"
+    cidr_block: 10.0.0.0/16 # network is arbritary
+    name: AWS_RHEL_CONVERT
+    tags: "{{ inject.tags }}"
+  register: rhel_6_els_vpc
+  run_once: True
+  delegate_to: 127.0.0.1
+
+- name: "VPC | build a subnet in {{ rhel_6_els_vpc.vpc.id }}"
+  amazon.aws.ec2_vpc_subnet:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region:  "{{ inject.region | default(omit) }}"
+    tags: "{{ inject.tags | combine({'rhel_6_els_task':'incomplete'}) }}"
+    az: "{{ donor_instance_az }}"
+    vpc_id: "{{ rhel_6_els_vpc.vpc.id }}"
+    cidr: 10.0.0.0/24
+  delegate_to: 127.0.0.1
+  run_once: True
+  register: rhel_6_els_vpc_subnet
+  
+  # Set the location of the instance for the copy.
+  # This is an isolated vpc and an isolated subnet
+  # with an internet gateway and access from only the ansible host.
+- name: Add internet gateway
+  community.aws.ec2_vpc_igw:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region:  "{{ inject.region | default(omit) }}"
+    tags: "{{ inject.tags }}"
+    vpc_id: "{{ rhel_6_els_vpc.vpc.id }}"
+  delegate_to: 127.0.0.1
+  run_once: True
+  register: rhel_6_els_vpc_igw
+
+- name: add route table for instance management
+  community.aws.ec2_vpc_route_table:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region:  "{{ inject.region | default(omit) }}"
+    tags: "{{ inject.tags | combine({'Name':'rhel-6-els-public'}) }}"
+    vpc_id: "{{ rhel_6_els_vpc.vpc.id }}"
+    subnets:
+      - "{{ rhel_6_els_vpc_subnet.subnet.id }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ rhel_6_els_vpc_igw.gateway_id }}"
+  delegate_to: 127.0.0.1
+  run_once: True
+  register: rhel_6_els_vpc_route_table
+
+- name: add security group with access from the ansible host
+  amazon.aws.ec2_group:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region:  "{{ inject.region | default(omit) }}"
+    tags: "{{ inject.tags }}"
+    name: rhel_6_els_group
+    description: Allow SSH to instances assigned
+    vpc_id: "{{ rhel_6_els_vpc.vpc.id }}"
+    rules:
+      - proto: tcp
+        ports:
+        - 22
+        cidr_ip: "{{ rhel_6_cidr_ip | default('0.0.0.0/0') }}"
+        # This value can be modified to constrain access.
+  delegate_to: 127.0.0.1
+  run_once: True
+  register: rhel_6_els_vpc_sg

@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include rhel-6-els"
+      include_role:
+        name: "rhel-6-els"

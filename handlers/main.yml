@@ -1,0 +1,66 @@
+---
+# handlers file for rhel-6-els
+   ########################################################################## #
+   # Copyright 2020 Amazon Web Services, Inc.                                 #
+   #                                                                          #
+   # Licensed under the Apache License, Version 2.0 (the "License");          #
+   # you may not use this file except in compliance with the License.         #
+   # You may obtain a copy of the License at                                  #
+   #                                                                          #
+   #     http://www.apache.org/licenses/LICENSE-2.0                           #
+   #                                                                          #
+   # Unless required by applicable law or agreed to in writing, software      #
+   # distributed under the License is distributed on an "AS IS" BASIS,        #
+   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+   # See the License for the specific language governing permissions and      #
+   # limitations under the License.                                           #
+   # ######################################################################### #
+#
+- name: report on key
+  ansible.builtin.debug:
+    msg: "Adding key {{ rhel_6_els_temp_key.key.name }} to /tmp"
+
+- name: save the private key to tmp for later use
+  copy:
+    content: "{{ rhel_6_els_temp_key.key.private_key }}"
+    dest: "{{ inject.private_key_path }}"
+    mode: 0600
+  when: rhel_6_els_temp_key.changed
+  delegate_to: 127.0.0.1
+  delegate_facts: true
+  notify:
+    - report on key
+    - retrieve the md5 hash from the file
+
+- name: add donor volume sdf
+  amazon.aws.ec2_vol:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ inject.region | default(omit) }}"
+    id: "{{ donor_volume.volume_id }}"
+    device_name: /dev/sdf
+    instance: "{{ surrogate_instance.instances[0].instance_id }}"
+  delegate_to: 127.0.0.1
+
+- name: add target volume sdg
+  amazon.aws.ec2_vol:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ inject.region | default(omit) }}"
+    id: "{{ surrogate_instance_root_volume_info.volumes[0].id }}"
+    device_name: /dev/sdg
+    instance: "{{ surrogate_instance.instances[0].instance_id }}"
+  delegate_to: 127.0.0.1
+
+
+- name: retrieve the md5 hash from the file
+  shell:
+    cmd: "openssl pkcs8 -in {{ inject.private_key_path }} -nocrypt -topk8 -outform DER | openssl sha1 -c | cut -d' ' -f2"
+  delegate_to: 127.0.0.1
+  delegate_facts: true
+  run_once: true
+  register: tmp_private_key_md5
+  
+

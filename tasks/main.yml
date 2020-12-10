@@ -1,0 +1,98 @@
+---
+   # ######################################################################## #
+   # Copyright 2020 Amazon Web Services, Inc.                                 #
+   #                                                                          #
+   # Licensed under the Apache License, Version 2.0 (the "License");          #
+   # you may not use this file except in compliance with the License.         #
+   # You may obtain a copy of the License at                                  #
+   #                                                                          #
+   #     http://www.apache.org/licenses/LICENSE-2.0                           #
+   #                                                                          #
+   # Unless required by applicable law or agreed to in writing, software      #
+   # distributed under the License is distributed on an "AS IS" BASIS,        #
+   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+   # See the License for the specific language governing permissions and      #
+   # limitations under the License.                                           #
+   # ######################################################################## #
+
+# tasks file for rhel-6-els
+- include_tasks: rhel_6_els_ami.yml
+  # provides var:rhel_6_els_ami
+
+- name: Gather the instance information for use in the instance swap
+  include_tasks: get_instance_information.yml
+  # provides rhel6_instance_... for details related to the donor
+
+- name: create an isolated vpc for the instance cloning
+  include_tasks: build_isolated_vpc.yml
+  # provides donor_instance_info
+
+- name: Create snapshot 1 of the donor instance
+  include_tasks: snapshot_one.yml
+  # creates and provides the snapshot id.
+
+- name: Create a rhel-6-els target instance
+  include_tasks: launch_rhel_6_els_instance.yml
+  
+- name: Create a surrogate instance
+  include_tasks: initalize_surrogate_instance.yml
+  
+#   notify: set the instance id as a fact
+#     # (needed for stop/start action)
+#   notify: set the root_volume as a fact
+#     # (needed for snapshot actions)
+
+- name: enumerate the extra volumes attached to the instance
+  debug:
+    msg: "-*- TODO -*- enumerate the extra volumes attached to the instance"
+
+#   name: Stop the rhel-6-els target instance
+#   debug:
+#     msg: "-*- TODO -*- Stop the rhel-6-els target instance"
+# - name: Detach the target instance root volume
+#   debug:
+#     msg: "-*- TODO -*-  Detach the target instance root volume"
+#   notify: Attach target vol to surrogate
+# - name: Create donor volume 1 from snapshot 1
+#   debug:
+#     msg: "-*- TODO -*-  Create donor volume 1 from snapshot 1"
+# - name: Attach donor volume to surrogate instance
+#   debug:
+#     msg: "-*- TODO -*-  Attach donor volume to surrogate instance"
+# - name: Copy content from donor volume to target instance.
+#   debug:
+#     msg: "-*- TODO -*-  Copy content from donor volume to target instance."
+# - name: Destroy donor volume 1 from donor instance
+#   debug:
+#     msg: "-*- TODO -*-  Destroy donor volume 1 from donor instance"
+# - name: Stop donor instance for final snapshot
+#   debug:
+#     msg: "-*- TODO -*-  Stop donor instance for final snapshot"
+#   # notify: -*- TODO -*- create snapshot 2 from donor root volume
+#   # (set timeout based on the maintenance window)
+#   # notify: -*- TODO -*- Start instance to continue providing service
+# - name: Create donor volume 2 from snapshot 2
+#   debug:
+#     msg: "-*- TODO -*-  Create donor volume 2 from snapshot 2"
+# - name: Attach the donor volume 2 to the surrogate instance
+#   debug:
+#     msg: "-*- TODO -*-  Attach the donor volume 2 to the surrogate instance"
+# - name: dd the content from donor volume 2 to target vol
+#   debug:
+#     msg: "-*- TODO -*-  dd the content from donor volume 2 to target vol"
+#   # (set timeout based on the maintenance window)
+#   # notify: detach the volumes from the surrogate
+# - name: terminate the surrogate instance
+#   debug:
+#     msg: "-*- TODO -*-  terminate the surrogate instance"
+# - name: attach the target volume to the target instance (rhel-6-els)
+#   debug:
+#     msg: "-*- TODO -*-  attach the target volume to the target instance (rhel-6-els)"
+#   # notify: -*- TODO -*- register an image from the target instance
+# - name: Attach any additional volumes to the target instance
+#   debug:
+#     msg: "-*- TODO -*-  Attach any additional volumes to the target instance"
+#   # notify: -*- TODO -*- Create Image from donor instance (no waiting)
+# - name: Start the target instance
+#   debug:
+#     msg: "-*- TODO -*-  Start the target instance

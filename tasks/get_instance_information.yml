@@ -1,0 +1,60 @@
+---
+# Build information from the inspected instance
+# This information should not come from accessing the instance directly.
+   # ######################################################################## #
+   # Copyright 2020 Amazon Web Services, Inc.                                 #
+   #                                                                          #
+   # Licensed under the Apache License, Version 2.0 (the "License");          #
+   # you may not use this file except in compliance with the License.         #
+   # You may obtain a copy of the License at                                  #
+   #                                                                          #
+   #     http://www.apache.org/licenses/LICENSE-2.0                           #
+   #                                                                          #
+   # Unless required by applicable law or agreed to in writing, software      #
+   # distributed under the License is distributed on an "AS IS" BASIS,        #
+   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+   # See the License for the specific language governing permissions and      #
+   # limitations under the License.                                           #
+   # ######################################################################## #
+
+- name: RHEL-6-INSTANCE | Gather information from RHEL6 instance
+  community.aws.ec2_instance_info:
+    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ inject.region | default(omit) }}"
+    filters:
+      "tag:task": rhel-6-els
+  register: donor_instances_info
+  delegate_to: 127.0.0.1
+  delegate_facts: true
+
+- name: donor | Gather the detaijls related to the instance
+  ansible.builtin.set_fact:
+    donor_conf_dict: {
+    'az': "{{ item.1.placement.availability_zone }}",
+    'key': "{{ item.1.key_name }}",
+    'ip_address': "{{ item.1.private_ip_address }}",
+    'subnet_id': "{{ item.1.subnet_id }}",
+    # 'security_groups': "{{ item.1.security_groups }}",
+    # 'tags': "{{ item.1.tags }}",
+    # 'id': "{{ item.1.instance_id }}",
+    # 'type': "{{ item.1.instance_type }}",
+    # 'block_device_mappings': "{{ item.1.block_device_mappings }}",
+    # 'root_volume_id': "{{ item.1.block_device_mappings }} | community.general.json_query('[?device_name == `/dev/sda1`].ebs.volume_id | [-1]') }}",
+    # 'root_volume_device_name': "{{ item.1.block_device_mappings | community.general.json_query('[?device_name == `/dev/sda1`].device_name | [-1]') }}"
+    }
+  run_once: true
+  register: donor_config_dict
+  delegate_to: 127.0.0.1
+  with_indexed_items: "{{ donor_instances_info.instances }}"
+
+- name: Convert instance config dictionary to list
+  ansible.builtin.set_fact:
+    donor_instance_conf: "{{ donor_config_dict.results }}"
+  delegate_to: 127.0.0.1
+
+- name: Convert instance config dictionary to list
+  ansible.builtin.set_fact:
+    donor_instance_conf: "{{ donor_config_dict.results | map(attributes='ansible_facts.instance_config_dict') | list }}"
+  delegate_to: 127.0.0.1

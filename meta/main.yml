@@ -1,0 +1,20 @@
+galaxy_info:
+  author: David Duncan
+  description: Partner Solutions Architect
+  company: Amazon Web Services, Inc.
+  license: Apache-2.0
+  min_ansible_version: 2.9
+  platforms:
+  - name: Fedora
+    versions:
+    - 32
+    - 33
+  - name: EL
+    versions:
+    - 7
+    - 8
+  galaxy_tags:
+    - system
+    - redhat
+    - rhel
+    - centos
