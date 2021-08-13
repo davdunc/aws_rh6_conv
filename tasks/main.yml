@@ -15,7 +15,7 @@
    # limitations under the License.                                           #
    # ######################################################################## #
 
-# tasks file for rhel-6-els
+# Find the RHEL 6 ELS AMI and register variables for it
 - include_tasks: rhel_6_els_ami.yml
   # provides var:rhel_6_els_ami
 
@@ -23,19 +23,24 @@
   include_tasks: get_instance_information.yml
   # provides rhel6_instance_... for details related to the donor
 
-- name: create an isolated vpc for the instance cloning
-  include_tasks: build_isolated_vpc.yml
+#- name: create an isolated vpc for the instance cloning
+#  include_tasks: build_isolated_vpc.yml
   # provides donor_instance_info
 
-- name: Create snapshot 1 of the donor instance
-  include_tasks: snapshot_one.yml
-  # creates and provides the snapshot id.
+# We cannot loop over a block so we have to loop over a single include
+- name: Migrate an instance
+  include_tasks: migrate_instance.yml
+  vars:
+    donor_instance: '{{ instance_index }}'
+  loop: '{{ donor_instances_info.instances }}'
+  loop_control:
+    loop_var: instance_index
 
-- name: Create a rhel-6-els target instance
-  include_tasks: launch_rhel_6_els_instance.yml
+#- name: Create a rhel-6-els target instance
+#  include_tasks: launch_rhel_6_els_instance.yml
   
-- name: Create a surrogate instance
-  include_tasks: initalize_surrogate_instance.yml
+#- name: Create a surrogate instance
+#  include_tasks: initalize_surrogate_instance.yml
   
 #   notify: set the instance id as a fact
 #     # (needed for stop/start action)

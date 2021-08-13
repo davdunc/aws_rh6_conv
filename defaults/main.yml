@@ -1,2 +1,5 @@
 ---
 # defaults file for rhel-6-els
+
+instance_tag: 'rhel-6-els'
+key_pair_name: ''

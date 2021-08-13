@@ -22,40 +22,48 @@
 # - name: Identify the Root volume of the rhel-6-instance
 #   amazon.aws.ec2_metadata_facts:
 
-- name: Get the instance root volume
-  amazon.aws.ec2_vol_info:
-    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
-    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
-    profile: "{{ inject.profile | default(omit) }}"
-    region: "{{ inject.region | default(omit) }}"
-    filters:
-      attachment.instance-id: "{{ donor_instance_id }}"
-      attachment.device: "{{ donor_instance_root_volume_device_name }}"
-  delegate_to: 127.0.0.1
-  register: donor_instance_root_volume_info
+#- name: Get the instance root volume
+#  amazon.aws.ec2_vol_info:
+#    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
+#    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+#    profile: "{{ inject.profile | default(omit) }}"
+#    region: "{{ inject.region | default(omit) }}"
+#    filters:
+#      attachment.instance-id: "{{ donor_instance_id }}"
+#      attachment.device: "{{ donor_instance_root_volume_device_name }}"
+#  delegate_to: 127.0.0.1
+#  register: donor_instance_root_volume_info
+#
 
-- name: "Create Snapshot for {{ donor_instance_id }}"
+- name: Show block device mappings
+  debug:
+    var: block_device.ebs.volume_id
+
+- name: "Create Snapshot for {{ donor_instance.instance_id }}"
   amazon.aws.ec2_snapshot:
-    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
-    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
-    profile: "{{ inject.profile | default(omit) }}"
-    region: "{{ inject.region | default(omit) }}"
-    volume_id: "{{ donor_instance_root_volume_info.volumes[0].id }}"
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    volume_id: '{{ block_device.ebs.volume_id }}'
     last_snapshot_min_age: 120
-    description: "Snapshot one destined for rhel-6-els from {{ donor_instance_id }}"
-    snapshot_tags: "{{ inject.tags | combine({ 'Name': donor_instance_id, 'els_status': 'active', 'els_stage':'one'}) }}"
+    description: "Snapshot of {{ block_device.ebs.volume_id }} destined for rhel-6-els from {{ donor_instance.instance_id }}"
+    #snapshot_tags: "{{ inject.tags | combine({ 'Name': donor_instance.instance_id, 'els_status': 'active', 'els_stage':'one'}) }}"
     wait: yes
+    wait_timeout: 7200
   delegate_to: 127.0.0.1
   register: donor_snapshot
-  async: 7200
-  poll: 0
 
-- name: Wait for the snapshot to complete
-  ansible.builtin.async_status:
-    jid: "{{ donor_snapshot.ansible_job_id }}"
-  register: snapshot_1_job
-  until: snapshot_1_job.finished
-  retries: 300
-  delay: 20
-  delegate_to: 127.0.0.1
-  delegate_facts: true
+- name: Add snapshot to the main list
+  set_fact:
+    my_snaps: "{{ my_snaps + [donor_snapshot] }}"
+
+#- name: Wait for the snapshot to complete
+#  ansible.builtin.async_status:
+#    jid: "{{ donor_snapshot.ansible_job_id }}"
+#  register: snapshot_1_job
+#  until: snapshot_1_job.finished
+#  retries: 300
+#  delay: 20
+#  delegate_to: 127.0.0.1
+#  delegate_facts: true

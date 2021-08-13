@@ -24,18 +24,24 @@
     profile: "{{ inject.profile | default(omit) }}"
     region: "{{ inject.region | default(omit) }}"
     filters:
-      "tag:task": rhel-6-els
+      "tag:task": '{{ instance_tag }}'
   register: donor_instances_info
   delegate_to: 127.0.0.1
   delegate_facts: true
 
-- name: donor | Gather the detaijls related to the instance
+#- name: show instances
+#  debug:
+#    var: donor_instances_info
+
+- name: donor | Gather the details related to the instance
   ansible.builtin.set_fact:
     donor_conf_dict: {
     'az': "{{ item.1.placement.availability_zone }}",
     'key': "{{ item.1.key_name }}",
     'ip_address': "{{ item.1.private_ip_address }}",
     'subnet_id': "{{ item.1.subnet_id }}",
+    'instance_id': "{{ item.1.instance_id }}",
+    'root_volume_device_name': "{{ item.1.root_device_name }}",
     # 'security_groups': "{{ item.1.security_groups }}",
     # 'tags': "{{ item.1.tags }}",
     # 'id': "{{ item.1.instance_id }}",
@@ -49,12 +55,16 @@
   delegate_to: 127.0.0.1
   with_indexed_items: "{{ donor_instances_info.instances }}"
 
-- name: Convert instance config dictionary to list
-  ansible.builtin.set_fact:
-    donor_instance_conf: "{{ donor_config_dict.results }}"
-  delegate_to: 127.0.0.1
+#- name: Show donor config
+#  debug:
+#    var: donor_conf_dict
 
-- name: Convert instance config dictionary to list
-  ansible.builtin.set_fact:
-    donor_instance_conf: "{{ donor_config_dict.results | map(attributes='ansible_facts.instance_config_dict') | list }}"
-  delegate_to: 127.0.0.1
+#- name: Convert donor config dictionary to list
+#  ansible.builtin.set_fact:
+#    donor_instance_conf: "{{ donor_config_dict.results }}"
+#  delegate_to: 127.0.0.1
+
+#- name: Convert instance config dictionary to list
+#  ansible.builtin.set_fact:
+#    donor_instance_conf: "{{ donor_config_dict.results | map(attributes='ansible_facts.instance_config_dict') | list }}"
+#  delegate_to: 127.0.0.1

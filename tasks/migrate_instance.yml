@@ -1,0 +1,21 @@
+---
+
+- name: Show donor instance info
+  debug:
+    var: donor_instance
+
+- name: Initialize my_snaps
+  set_fact:
+    my_snaps: []
+
+- name: Create snapshots of the donor instance volumes
+  include_tasks: snapshot_one.yml
+  vars:
+    block_device: '{{ block_device_index }}'
+  loop: '{{ donor_instance.block_device_mappings }}'
+  loop_control:
+    loop_var: block_device_index
+
+- name: Show my_snaps
+  debug:
+    var: my_snaps
