@@ -39,7 +39,13 @@
   debug:
     var: block_device.ebs.volume_id
 
-- name: "Create Snapshot for {{ donor_instance.instance_id }}"
+- name: "Gather vol {{ block_device.ebs.volume_id }} info"
+  amazon.aws.ec2_vol_info:
+    filters:
+      volume-id: '{{ block_device.ebs.volume_id }}'
+  register: donor_volume
+
+- name: "Create Snapshot of {{ donor_instance.instance_id }} vol: {{ block_device.ebs.volume_id }}" 
   amazon.aws.ec2_snapshot:
     aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
@@ -58,12 +64,21 @@
   set_fact:
     my_snaps: "{{ my_snaps + [donor_snapshot] }}"
 
-#- name: Wait for the snapshot to complete
-#  ansible.builtin.async_status:
-#    jid: "{{ donor_snapshot.ansible_job_id }}"
-#  register: snapshot_1_job
-#  until: snapshot_1_job.finished
-#  retries: 300
-#  delay: 20
-#  delegate_to: 127.0.0.1
-#  delegate_facts: true
+- name: "Create volume for {{ donor_snapshot }}"
+  amazon.aws.ec2_vol:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: "{{ ec2_url | default(omit) }}"
+    snapshot: '{{ donor_snapshot.snapshot_id }}'
+    volume_type: '{{ donor_volume[0].type }}'
+    volume_size: '{ donor_snapshot.volume_size }}'
+    zone: '{{ donor_volume[0].zone }}'
+    tags: '{{ donor_snapshot.tags }}'
+  delegate_to: localhost
+  register: my_vol
+
+- name: Add volume to the main list
+  set_fact:
+    my_snaps: "{{ my_vols + [my_vol] }}"

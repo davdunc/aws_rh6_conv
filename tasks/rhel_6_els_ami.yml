@@ -9,10 +9,11 @@
       product-code: 65nbrx0tx3wb0wnchpwz5yvm
       product-code.type: marketplace
       name: RHEL-6.10ELS_HVM*
-  delegate_to: 127.0.0.1
+  delegate_to: localhost
   register: rhel_6_els_amis
 
 - name: Identify the most recently published image
+  delegate_to: localhost
   ansible.builtin.set_fact:
     rhel_6_els_ami: >-
       {{ rhel_6_els_amis.images | selectattr('name', 'defined') | sort(attribute='name') | last }}
