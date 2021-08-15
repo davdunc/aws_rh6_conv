@@ -47,10 +47,10 @@
 #   notify: set the root_volume as a fact
 #     # (needed for snapshot actions)
 
-- name: enumerate the extra volumes attached to the instance
-  debug:
-    msg: "-*- TODO -*- enumerate the extra volumes attached to the instance"
-
+#- name: enumerate the extra volumes attached to the instance
+#  debug:
+#    msg: "-*- TODO -*- enumerate the extra volumes attached to the instance"
+#
 #   name: Stop the rhel-6-els target instance
 #   debug:
 #     msg: "-*- TODO -*- Stop the rhel-6-els target instance"

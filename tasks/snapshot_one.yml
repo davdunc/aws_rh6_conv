@@ -17,35 +17,19 @@
    # limitations under the License.                                           #
    # ######################################################################## #
 
-# This next task has been replace by "get_instance_information.yml"
-# There is no reason to require login to the instance. This does.
-# - name: Identify the Root volume of the rhel-6-instance
-#   amazon.aws.ec2_metadata_facts:
-
-#- name: Get the instance root volume
-#  amazon.aws.ec2_vol_info:
-#    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
-#    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
-#    profile: "{{ inject.profile | default(omit) }}"
-#    region: "{{ inject.region | default(omit) }}"
-#    filters:
-#      attachment.instance-id: "{{ donor_instance_id }}"
-#      attachment.device: "{{ donor_instance_root_volume_device_name }}"
-#  delegate_to: 127.0.0.1
-#  register: donor_instance_root_volume_info
-#
-
 - name: Show block device mappings
   debug:
     var: block_device.ebs.volume_id
 
 - name: "Gather vol {{ block_device.ebs.volume_id }} info"
+  delegate_to: localhost
   amazon.aws.ec2_vol_info:
     filters:
       volume-id: '{{ block_device.ebs.volume_id }}'
   register: donor_volume
 
 - name: "Create Snapshot of {{ donor_instance.instance_id }} vol: {{ block_device.ebs.volume_id }}" 
+  delegate_to: localhost
   amazon.aws.ec2_snapshot:
     aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
@@ -65,6 +49,7 @@
     my_snaps: "{{ my_snaps + [donor_snapshot] }}"
 
 - name: "Create volume for {{ donor_snapshot }}"
+  delegate_to: localhost
   amazon.aws.ec2_vol:
     aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
@@ -82,3 +67,11 @@
 - name: Add volume to the main list
   set_fact:
     my_snaps: "{{ my_vols + [my_vol] }}"
+
+- name: Attach volume to the replacement host
+  delegate_to: localhost
+  amazon.aws.ec2_vol:
+    instance: {{ donor_instance.instance_id }}
+    id: {{ my_vol.volume_id }}
+    device_name: {{ block_device.device_name}}
+    delete_on_terminate: {{ block_device.ebs.delete_on_termination }}
