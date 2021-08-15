@@ -17,7 +17,7 @@
     instance_type: '{{ donor_instance.instance_type }}'
     image_id: '{{ rhel_6_els_ami.image_id }}'
     wait: true
-    name: "ELS replacement "
+    name: "ELS replacement {{ donor_instance.instance_id }}"
     vpc_subnet_id: '{{ donor_instance.subnet_id }}'
     #group_id: '{{ donor_instance. }}'
     #instance_profile_name: '{{ donor_instance. }}'
@@ -43,18 +43,18 @@
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
     state: stopped
     instance_ids:
-      - '{{ replacement_instance[0].instance_id }}'
+      - '{{ replacement_instance.instances[0].instance_id }}'
 
 - name: Detach root volume from replacement instance
   delegate_to: localhost
   amazon.aws.ec2_vol:
-    id: '{{ replacement_instance[0].block_device_mappings[0].ebs.volume_id }}'
+    id: '{{ replacement_instance.instances[0].block_device_mappings[0].ebs.volume_id }}'
     instance: None
 
 - name: Delete root volume from replacement instance
   delegate_to: localhost
   amazon.aws.ec2_vol:
-    id: '{{ replacement_instance[0].block_device_mappings[0].ebs.volume_id }}'
+    id: '{{ replacement_instance.instances[0].block_device_mappings[0].ebs.volume_id }}'
     state: absent
 
 - name: Initialize my_snaps
