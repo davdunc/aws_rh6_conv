@@ -79,4 +79,3 @@
   delegate_to: localhost
   debug:
     var: my_snaps
-

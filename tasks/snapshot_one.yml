@@ -41,7 +41,6 @@
     #snapshot_tags: "{{ inject.tags | combine({ 'Name': donor_instance.instance_id, 'els_status': 'active', 'els_stage':'one'}) }}"
     wait: yes
     wait_timeout: 7200
-  delegate_to: 127.0.0.1
   register: donor_snapshot
 
 - name: Add snapshot to the main list
@@ -61,7 +60,6 @@
     volume_size: '{ donor_snapshot.volume_size }}'
     zone: '{{ donor_volume[0].zone }}'
     tags: '{{ donor_snapshot.tags }}'
-  delegate_to: localhost
   register: my_vol
 
 - name: Add volume to the main list

@@ -62,5 +62,3 @@
   delegate_facts: true
   run_once: true
   register: tmp_private_key_md5
-  
-
