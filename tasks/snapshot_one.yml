@@ -24,6 +24,12 @@
 - name: "Gather vol {{ block_device.ebs.volume_id }} info"
   delegate_to: localhost
   amazon.aws.ec2_vol_info:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     filters:
       volume-id: '{{ block_device.ebs.volume_id }}'
   register: donor_volume
@@ -39,6 +45,8 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     volume_id: '{{ block_device.ebs.volume_id }}'
     last_snapshot_min_age: 120
     description: "Snapshot of {{ block_device.ebs.volume_id }} destined for rhel-6-els from {{ donor_instance.instance_id }}"
@@ -58,7 +66,8 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: "{{ ec2_url | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     snapshot: '{{ donor_snapshot.snapshot_id }}'
     volume_type: '{{ donor_volume.volumes[0].type }}'
     volume_size: '{{ donor_snapshot.volume_size }}'
@@ -73,6 +82,12 @@
 - name: Attach volume to the replacement host
   delegate_to: localhost
   amazon.aws.ec2_vol:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     instance: '{{ replacement_instance.instances[0].instance_id }}'
     id: '{{ my_vol.volume_id }}'
     device_name: '{{ block_device.device_name }}'

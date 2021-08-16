@@ -11,7 +11,8 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    #availability_zone: '{{ donor_instance.placement.availability_zone }}'
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     ebs_optimized: '{{ donor_instance.ebs_optimized }}'
     key_name: '{{ donor_instance.key_name }}'
     instance_type: '{{ donor_instance.instance_type }}'
@@ -33,6 +34,12 @@
 - name: Refetch replacement instance info
   delegate_to: localhost
   community.aws.ec2_instance_info:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     instance_ids:
       - '{{ replacement_instance.instances[0].instance_id }}'
   register: replacement_instance
@@ -48,6 +55,8 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     state: stopped
     instance_ids:
       - '{{ replacement_instance.instances[0].instance_id }}'
@@ -55,6 +64,12 @@
 - name: Refetch replacement instance info
   delegate_to: localhost
   community.aws.ec2_instance_info:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     instance_ids:
       - '{{ replacement_instance.instances[0].instance_id }}'
   register: replacement_instance
@@ -66,12 +81,24 @@
 - name: Detach root volume from replacement instance
   delegate_to: localhost
   amazon.aws.ec2_vol:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     id: '{{ replacement_instance.instances[0].block_device_mappings[0].ebs.volume_id }}'
     instance: None
 
 - name: Delete root volume from replacement instance
   delegate_to: localhost
   amazon.aws.ec2_vol:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     id: '{{ replacement_instance.instances[0].block_device_mappings[0].ebs.volume_id }}'
     state: absent
 
@@ -105,6 +132,8 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     state: running
     instance_ids:
       - '{{ replacement_instance.instances[0].instance_id }}'
