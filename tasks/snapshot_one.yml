@@ -61,7 +61,7 @@
     ec2_url: "{{ ec2_url | default(omit) }}"
     snapshot: '{{ donor_snapshot.snapshot_id }}'
     volume_type: '{{ donor_volume.volumes[0].type }}'
-    volume_size: '{ donor_snapshot.volume_size }}'
+    volume_size: '{{ donor_snapshot.volume_size }}'
     zone: '{{ donor_volume.volumes[0].zone }}'
     tags: '{{ donor_snapshot.tags }}'
   register: my_vol
