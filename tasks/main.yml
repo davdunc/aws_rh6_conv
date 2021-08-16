@@ -15,6 +15,20 @@
    # limitations under the License.                                           #
    # ######################################################################## #
 
+#- name: Refetch replacement instance info
+#  delegate_to: localhost
+#  community.aws.ec2_instance_info:
+#    instance_ids:
+#      - 'i-0dd82eff8d609390e'
+#  register: replacement_instance
+#
+#- name: Show replacement instance info again
+#  debug:
+#    var: replacement_instance
+#
+#- fail:
+#    msg: "stop here"
+
 # Find the RHEL 6 ELS AMI and register variables for it
 - include_tasks: rhel_6_els_ami.yml
   # provides var:rhel_6_els_ami
@@ -46,58 +60,3 @@
 #     # (needed for stop/start action)
 #   notify: set the root_volume as a fact
 #     # (needed for snapshot actions)
-
-#- name: enumerate the extra volumes attached to the instance
-#  debug:
-#    msg: "-*- TODO -*- enumerate the extra volumes attached to the instance"
-#
-#   name: Stop the rhel-6-els target instance
-#   debug:
-#     msg: "-*- TODO -*- Stop the rhel-6-els target instance"
-# - name: Detach the target instance root volume
-#   debug:
-#     msg: "-*- TODO -*-  Detach the target instance root volume"
-#   notify: Attach target vol to surrogate
-# - name: Create donor volume 1 from snapshot 1
-#   debug:
-#     msg: "-*- TODO -*-  Create donor volume 1 from snapshot 1"
-# - name: Attach donor volume to surrogate instance
-#   debug:
-#     msg: "-*- TODO -*-  Attach donor volume to surrogate instance"
-# - name: Copy content from donor volume to target instance.
-#   debug:
-#     msg: "-*- TODO -*-  Copy content from donor volume to target instance."
-# - name: Destroy donor volume 1 from donor instance
-#   debug:
-#     msg: "-*- TODO -*-  Destroy donor volume 1 from donor instance"
-# - name: Stop donor instance for final snapshot
-#   debug:
-#     msg: "-*- TODO -*-  Stop donor instance for final snapshot"
-#   # notify: -*- TODO -*- create snapshot 2 from donor root volume
-#   # (set timeout based on the maintenance window)
-#   # notify: -*- TODO -*- Start instance to continue providing service
-# - name: Create donor volume 2 from snapshot 2
-#   debug:
-#     msg: "-*- TODO -*-  Create donor volume 2 from snapshot 2"
-# - name: Attach the donor volume 2 to the surrogate instance
-#   debug:
-#     msg: "-*- TODO -*-  Attach the donor volume 2 to the surrogate instance"
-# - name: dd the content from donor volume 2 to target vol
-#   debug:
-#     msg: "-*- TODO -*-  dd the content from donor volume 2 to target vol"
-#   # (set timeout based on the maintenance window)
-#   # notify: detach the volumes from the surrogate
-# - name: terminate the surrogate instance
-#   debug:
-#     msg: "-*- TODO -*-  terminate the surrogate instance"
-# - name: attach the target volume to the target instance (rhel-6-els)
-#   debug:
-#     msg: "-*- TODO -*-  attach the target volume to the target instance (rhel-6-els)"
-#   # notify: -*- TODO -*- register an image from the target instance
-# - name: Attach any additional volumes to the target instance
-#   debug:
-#     msg: "-*- TODO -*-  Attach any additional volumes to the target instance"
-#   # notify: -*- TODO -*- Create Image from donor instance (no waiting)
-# - name: Start the target instance
-#   debug:
-#     msg: "-*- TODO -*-  Start the target instance

@@ -76,4 +76,4 @@
     instance: '{{ replacement_instance.instances[0].instance_id }}'
     id: '{{ my_vol.volume_id }}'
     device_name: '{{ block_device.device_name }}'
-    delete_on_terminate: '{{ block_device.ebs.delete_on_termination }}'
+    delete_on_termination: '{{ block_device.ebs.delete_on_termination }}'

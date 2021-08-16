@@ -22,17 +22,24 @@
     #group_id: '{{ donor_instance. }}'
     #instance_profile_name: '{{ donor_instance. }}'
     #instance_tags: '{{ donor_instance. }}'
-    state: present
+    state: running
   register: replacement_instance
-
-- name: Show replacement instance info
-  debug:
-    var: replacement_instance
 
 - name: Wait for replace instance to finish booting
   wait_for:
     timeout: 60
   delegate_to: localhost
+
+- name: Refetch replacement instance info
+  delegate_to: localhost
+  community.aws.ec2_instance_info:
+    instance_ids:
+      - '{{ replacement_instance.instances[0].instance_id }}'
+  register: replacement_instance
+
+- name: Show replacement instance info again
+  debug:
+    var: replacement_instance
 
 - name: Stop replacement instance
   delegate_to: localhost
@@ -90,3 +97,14 @@
   delegate_to: localhost
   debug:
     var: my_snaps
+
+- name: Start replacement instance
+  delegate_to: localhost
+  community.aws.ec2_instance:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    state: running
+    instance_ids:
+      - '{{ replacement_instance.instances[0].instance_id }}'
