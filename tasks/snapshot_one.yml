@@ -19,7 +19,7 @@
 
 - name: Show block device mappings
   debug:
-    var: block_device.ebs.volume_id
+    var: block_device
 
 - name: "Gather vol {{ block_device.ebs.volume_id }} info"
   delegate_to: localhost
@@ -27,6 +27,10 @@
     filters:
       volume-id: '{{ block_device.ebs.volume_id }}'
   register: donor_volume
+
+- name: Show vol info
+  debug:
+    var: donor_volume
 
 - name: "Create Snapshot of {{ donor_instance.instance_id }} vol: {{ block_device.ebs.volume_id }}" 
   delegate_to: localhost
@@ -47,7 +51,7 @@
   set_fact:
     my_snaps: "{{ my_snaps + [donor_snapshot] }}"
 
-- name: "Create volume for {{ donor_snapshot }}"
+- name: "Create volume for {{ donor_snapshot.snapshot_id }}"
   delegate_to: localhost
   amazon.aws.ec2_vol:
     aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
@@ -56,9 +60,9 @@
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
     ec2_url: "{{ ec2_url | default(omit) }}"
     snapshot: '{{ donor_snapshot.snapshot_id }}'
-    volume_type: '{{ donor_volume[0].type }}'
+    volume_type: '{{ donor_volume.volumes[0].type }}'
     volume_size: '{ donor_snapshot.volume_size }}'
-    zone: '{{ donor_volume[0].zone }}'
+    zone: '{{ donor_volume.volumes[0].zone }}'
     tags: '{{ donor_snapshot.tags }}'
   register: my_vol
 
@@ -69,7 +73,7 @@
 - name: Attach volume to the replacement host
   delegate_to: localhost
   amazon.aws.ec2_vol:
-    instance: {{ donor_instance.instance_id }}
-    id: {{ my_vol.volume_id }}
-    device_name: {{ block_device.device_name}}
-    delete_on_terminate: {{ block_device.ebs.delete_on_termination }}
+    instance: '{{ replacement_instance.instances[0].instance_id }}'
+    id: '{{ my_vol.volume_id }}'
+    device_name: '{{ block_device.device_name }}'
+    delete_on_terminate: '{{ block_device.ebs.delete_on_termination }}'

@@ -2,7 +2,7 @@
 
 - name: Show donor instance info
   debug:
-    var: rhel_6_els_ami
+    var: donor_instance
 
 - name: Create replacement instance
   delegate_to: localhost
@@ -44,6 +44,17 @@
     state: stopped
     instance_ids:
       - '{{ replacement_instance.instances[0].instance_id }}'
+
+- name: Refetch replacement instance info
+  delegate_to: localhost
+  community.aws.ec2_instance_info:
+    instance_ids:
+      - '{{ replacement_instance.instances[0].instance_id }}'
+  register: replacement_instance
+
+- name: Show replacement instance info again
+  debug:
+    var: replacement_instance
 
 - name: Detach root volume from replacement instance
   delegate_to: localhost
