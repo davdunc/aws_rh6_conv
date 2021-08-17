@@ -4,9 +4,6 @@
   debug:
     var: donor_instance
 
-- fail:
-    msg: "stop here"
-
 - name: Create replacement instance
   delegate_to: localhost
   community.aws.ec2_instance:
