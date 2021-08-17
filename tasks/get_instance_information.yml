@@ -21,8 +21,11 @@
   community.aws.ec2_instance_info:
     aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
     aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
+    security_token: "{{ ansible_env.AWS_SESSION_TOKEN | default(omit) }}"
     profile: "{{ inject.profile | default(omit) }}"
     region: "{{ inject.region | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     filters:
       "tag:task": '{{ instance_tag }}'
   register: donor_instances_info

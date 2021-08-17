@@ -2,7 +2,7 @@
 # defaults file for rhel-6-els
 
 instance_tag: 'rhel-6-els'
-key_pair_name: ''
+#key_pair_name: ''
 #aws_region:
 aws_ssl_enabled: true
 #aws_ec2_url: 'https://ec2.{{ aws_region }}.amazonaws.com'
