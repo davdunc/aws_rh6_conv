@@ -4,7 +4,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     owners: 679593333241
     filters:

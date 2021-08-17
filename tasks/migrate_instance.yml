@@ -4,6 +4,9 @@
   debug:
     var: donor_instance
 
+- fail:
+    msg: "stop here"
+
 - name: Create replacement instance
   delegate_to: localhost
   community.aws.ec2_instance:
@@ -11,7 +14,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     ebs_optimized: '{{ donor_instance.ebs_optimized }}'
     key_name: '{{ donor_instance.key_name }}'
@@ -38,7 +41,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     instance_ids:
       - '{{ replacement_instance.instances[0].instance_id }}'
@@ -55,7 +58,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     state: stopped
     instance_ids:
@@ -68,7 +71,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     id: '{{ replacement_instance.instances[0].block_device_mappings[0].ebs.volume_id }}'
     instance: None
@@ -80,7 +83,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     id: '{{ replacement_instance.instances[0].block_device_mappings[0].ebs.volume_id }}'
     state: absent
@@ -115,7 +118,7 @@
     aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
     #profile: "{{ inject.profile | default(omit) }}"
     region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
-    ec2_url: '{{ aws_ec2_url }}'
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
     validate_certs: '{{ aws_ssl_enabled }}'
     state: running
     instance_ids:

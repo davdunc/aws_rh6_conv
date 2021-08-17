@@ -3,5 +3,6 @@
 
 instance_tag: 'rhel-6-els'
 key_pair_name: ''
+#aws_region:
 aws_ssl_enabled: true
-aws_ec2_url: 'https://ec2.{{ ansible_env.AWS_DEFAULT_REGION }}.amazonaws.com'
+#aws_ec2_url: 'https://ec2.{{ aws_region }}.amazonaws.com'
