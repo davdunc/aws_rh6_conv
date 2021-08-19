@@ -17,45 +17,82 @@
    # limitations under the License.                                           #
    # ######################################################################## #
 
-# This next task has been replace by "get_instance_information.yml"
-# There is no reason to require login to the instance. This does.
-# - name: Identify the Root volume of the rhel-6-instance
-#   amazon.aws.ec2_metadata_facts:
+- name: Show block device mappings
+  debug:
+    var: block_device
 
-- name: Get the instance root volume
+- name: "Gather vol {{ block_device.ebs.volume_id }} info"
+  delegate_to: localhost
   amazon.aws.ec2_vol_info:
-    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
-    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
-    profile: "{{ inject.profile | default(omit) }}"
-    region: "{{ inject.region | default(omit) }}"
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    security_token: "{{ ansible_env.AWS_SESSION_TOKEN | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     filters:
-      attachment.instance-id: "{{ donor_instance_id }}"
-      attachment.device: "{{ donor_instance_root_volume_device_name }}"
-  delegate_to: 127.0.0.1
-  register: donor_instance_root_volume_info
+      volume-id: '{{ block_device.ebs.volume_id }}'
+  register: donor_volume
 
-- name: "Create Snapshot for {{ donor_instance_id }}"
+- name: Show vol info
+  debug:
+    var: donor_volume
+
+- name: "Create Snapshot of {{ donor_instance.instance_id }} vol: {{ block_device.ebs.volume_id }}" 
+  delegate_to: localhost
   amazon.aws.ec2_snapshot:
-    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
-    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
-    profile: "{{ inject.profile | default(omit) }}"
-    region: "{{ inject.region | default(omit) }}"
-    volume_id: "{{ donor_instance_root_volume_info.volumes[0].id }}"
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    security_token: "{{ ansible_env.AWS_SESSION_TOKEN | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
+    volume_id: '{{ block_device.ebs.volume_id }}'
     last_snapshot_min_age: 120
-    description: "Snapshot one destined for rhel-6-els from {{ donor_instance_id }}"
-    snapshot_tags: "{{ inject.tags | combine({ 'Name': donor_instance_id, 'els_status': 'active', 'els_stage':'one'}) }}"
+    description: "Snapshot of {{ block_device.ebs.volume_id }} destined for rhel-6-els from {{ donor_instance.instance_id }}"
+    #snapshot_tags: "{{ inject.tags | combine({ 'Name': donor_instance.instance_id, 'els_status': 'active', 'els_stage':'one'}) }}"
     wait: yes
-  delegate_to: 127.0.0.1
+    wait_timeout: 7200
   register: donor_snapshot
-  async: 7200
-  poll: 0
 
-- name: Wait for the snapshot to complete
-  ansible.builtin.async_status:
-    jid: "{{ donor_snapshot.ansible_job_id }}"
-  register: snapshot_1_job
-  until: snapshot_1_job.finished
-  retries: 300
-  delay: 20
-  delegate_to: 127.0.0.1
-  delegate_facts: true
+- name: Add snapshot to the main list
+  set_fact:
+    my_snaps: "{{ my_snaps + [donor_snapshot] }}"
+
+- name: "Create volume for {{ donor_snapshot.snapshot_id }}"
+  delegate_to: localhost
+  amazon.aws.ec2_vol:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    security_token: "{{ ansible_env.AWS_SESSION_TOKEN | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
+    snapshot: '{{ donor_snapshot.snapshot_id }}'
+    volume_type: '{{ donor_volume.volumes[0].type }}'
+    volume_size: '{{ donor_snapshot.volume_size }}'
+    zone: '{{ donor_volume.volumes[0].zone }}'
+    tags: '{{ donor_snapshot.tags }}'
+  register: my_vol
+
+- name: Add volume to the main list
+  set_fact:
+    my_snaps: "{{ my_vols + [my_vol] }}"
+
+- name: Attach volume to the replacement host
+  delegate_to: localhost
+  amazon.aws.ec2_vol:
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    security_token: "{{ ansible_env.AWS_SESSION_TOKEN | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
+    instance: '{{ replacement_instance.instances[0].instance_id }}'
+    id: '{{ my_vol.volume_id }}'
+    device_name: '{{ block_device.device_name }}'
+    delete_on_termination: '{{ block_device.ebs.delete_on_termination }}'

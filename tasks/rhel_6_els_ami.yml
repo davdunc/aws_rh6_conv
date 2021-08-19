@@ -1,21 +1,29 @@
 - name: Register the RHEL-6-ELS image ID
   amazon.aws.ec2_ami_info:
-    aws_access_key: "{{ inject.aws_access_key | default(omit) }}"
-    aws_secret_key: "{{ inject.aws_secret_key | default(omit) }}"
-    profile: "{{ inject.profile | default(omit) }}"
-    region: "{{ inject.region | default(omit) }}"
+    aws_access_key: "{{ ansible_env.AWS_ACCESS_KEY_ID | default(omit) }}"
+    aws_secret_key: "{{ ansible_env.AWS_SECRET_ACCESS_KEY | default(omit) }}"
+    security_token: "{{ ansible_env.AWS_SESSION_TOKEN | default(omit) }}"
+    #profile: "{{ inject.profile | default(omit) }}"
+    region: "{{ ansible_env.AWS_DEFAULT_REGION | default(omit) }}"
+    ec2_url: '{{ aws_ec2_url | default(omit) }}'
+    validate_certs: '{{ aws_ssl_enabled }}'
     owners: 679593333241
     filters:
       product-code: 65nbrx0tx3wb0wnchpwz5yvm
       product-code.type: marketplace
       name: RHEL-6.10ELS_HVM*
-  delegate_to: 127.0.0.1
+  delegate_to: localhost
   register: rhel_6_els_amis
 
 - name: Identify the most recently published image
+  delegate_to: localhost
   ansible.builtin.set_fact:
     rhel_6_els_ami: >-
       {{ rhel_6_els_amis.images | selectattr('name', 'defined') | sort(attribute='name') | last }}
+
+- name: Show RHEL 6 ELS AMI
+  debug:
+    var: rhel_6_els_ami
 
 # Build the instance and when you build the instance add it to an inventory group
 #   that doesn't include the rhel6 instance.
