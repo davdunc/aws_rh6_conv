@@ -1,4 +1,4 @@
-Role Name
+AWS RHEL 6 to RHEL 6 ELS Conversion
 =========
 
 This role allows the user to convert the root volume of an on-demand RHEL 6 instance to a Marketplace instance of the On-demand RHEL 6 with Extended Lifecycle Support. 
@@ -7,7 +7,7 @@ As of now, the role supportes converting instances built from AMIs that are back
  - a valid RunInstance:0010 code identifying that it is derivative of the official AMI. 
  - access to the external network for access to the RHEL 6 ELS updates.
  
-There are many ways to approach making a move from one instance to another. The instances built on the 
+There are many ways to approach making a move from one instance to another. The images built for the RHEL 6 Extended Lifecycle Support for 
  
 
 Requirements
@@ -36,11 +36,17 @@ Role Variables
     configuring credentials (Aliases: ec2_secret_key,
     secret_key)[Default: (null)] type: str
 
+#### `instance_tag`
+     This is the tag assigned to the instances you wish to migrate
+     from RHEL 6 to RHEL 6 ELS. By default, this is set to
+     `rhel-6-els`
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+This is dependent upon the following collections:
+  - aws.amazon
+  - community.amazon
 
 Example Playbook
 ----------------
